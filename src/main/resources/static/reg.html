@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+
+
+  <link href="js/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
+  <link href="js/bootstrap3/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet"/>
+
+
+
+  <title>注册会员</title>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <form class="form-horizontal" >
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">会员名</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" onblur="OneName(this.value)" id="memberName" placeholder="请输入会员名...">
+                        <span id="nameTip" style="color: red"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">真实姓名</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="realName" placeholder="请输入真实姓名...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">密码</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="memberPwd" placeholder="请输入密码...">
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">邮箱</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="mail" placeholder="请输入邮箱...">
+                        <span id="mailTip"></span>
+
+                    </div>
+                </div>
+              <div class="form-group" id="areaName">
+                <label class="col-sm-2 control-label">地区</label>
+
+              </div>
+
+
+
+                <div style="text-align: center;">
+                    <button type="button" class="btn btn-primary" onclick="reg();" id="regButton"><i class="glyphicon glyphicon-ok"></i>注册</button>
+                    <button type="reset" class="btn btn-default"><i class="glyphicon glyphicon-refresh"></i>重置</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+<script src="js/js/jquery-3.3.1.js"></script>
+<script src="js/bootstrap3/js/bootstrap.min.js"></script>
+<script src="js/bootstrap3/bootstrap-datetimepicker/js/moment-with-locales.js"></script>
+<script src="js/bootstrap3/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<script src="js/bootstrap3/js/bootbox.min.js"></script>
+</body>
+<script>
+
+  $(function () {
+    queryAreaList(1)
+
+  })
+
+  function queryAreaList(id,obj) {
+    $(obj).parent().nextAll().remove();
+    $.ajax({
+      type:"post",
+      url:"http://localhost:8080/area/queryAreaList.do",
+      data:{id:id},
+      success:function (res) {
+
+        if(res.code==200){
+          var area =  res.data
+          if (area.length>0){
+            var AREAHTML= '<div class="col-sm-3"><select class="form-control" name="areaSelect" style="width: 100px" onchange="queryAreaList(this.value,this)">' +
+              '<option value="-1">=请选择=</option>'
+            for(let aaa of area){
+              AREAHTML+= '<option value="'+aaa.id+'" data-area-name="'+aaa.areaName+'">'+aaa.areaName+'</option>'
+            }
+            AREAHTML+='</select></div>'
+
+            $("#areaName").append(AREAHTML)
+          }
+
+        }else{
+
+        }
+
+
+      }
+    })
+  }
+
+  function OneName(memberName) {
+    if (memberName == ""){
+     alert("用户名为空")
+    }else {
+      $.ajax({
+        type:"get",
+        url:"http://localhost:8083/member/queryMemberName",
+        data:{memberName:memberName},
+        success:function (res) {
+          if(res.code!==200){
+            $("#nameTip").html("<div><b>用户名已存在</b></div>")
+            $("#regButton").attr("disabled","disabled")
+          }else{
+            $("#nameTip").html("<div></div>")
+            $("#regButton").removeAttr("disabled","")
+          }
+        }
+      })
+    }
+
+
+  }
+
+    function reg() {
+      var aaa =$("#mail").val()
+        var param = {};
+        param.memberName = $("#memberName").val();
+        param.realName = $("#realName").val();
+        param.memberPwd = $("#memberPwd").val();
+        param.mail = aaa;
+        var shengId = $($("select[name='areaSelect']")[0]).val();
+        var shiId = $($("select[name='areaSelect']")[1]).val();
+        var xianId = $($("select[name='areaSelect']")[2]).val();
+     var shengName = $($("select[name='areaSelect']")[0]).find("option:selected").data("area-name");
+     var shiName = $($("select[name='areaSelect']")[1]).find("option:selected").data("area-name");
+     var xianName = $($("select[name='areaSelect']")[2]).find("option:selected").data("area-name");
+     param.shengId = shengId;
+     param.shiId = shiId;
+     param.xianId = xianId;
+     param.areaName = shengName+"->"+shiName+"->"+xianName;
+        $.ajax({
+            type:"post",
+            url:"http://localhost:8083/member",
+            data:param,
+            success:function (res) {
+                if(res.code==200){
+                    alert("注册成功")
+                    location.reload();
+                    smail(aaa);
+                }else{
+                    alert(res.message)
+                    location.reload();
+                }
+            }
+        })
+    }
+    function smail(mail) {
+      $.ajax({
+        type:"post",
+        url:"http://localhost:8083/mail",
+        data:{mail:mail},
+        success:function (res) {
+
+        }
+      })
+    }
+</script>
+</html>

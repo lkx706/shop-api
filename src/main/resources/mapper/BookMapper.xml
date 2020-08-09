@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 为这个mapper指定一个唯一的namespace，namespace的值习惯上设置成包名+sql映射文件名，这样就能够保证namespace的值是唯一的
+	例如namespace="com.szh.mapper.personMapper"就是com.szh.mapper(包名)+personMapper(personMapper.xml文件去除后缀) -->
+<mapper namespace="com.fh.mapper.BookMapper">
+
+    <sql id="whereSql">
+        <!--
+              作用:1.自动在SQL语句后拼上where关键字
+                   2.自动去掉第一个查询条件前面的and
+          -->
+        <where>
+            <if test="bookName != null and bookName != '' ">
+                and bookName like concat('%',#{bookName},'%')
+            </if>
+
+            <if test="minCreateDate != null ">
+                <![CDATA[
+              and createDate >= #{minCreateDate}
+              ]]>
+            </if>
+            <if test="maxCreateDate != null ">
+                <![CDATA[
+              and createDate <= #{maxCreateDate}
+              ]]>
+            </if>
+
+            <if test="minPrice != null ">
+              <![CDATA[
+                and price >= #{minPrice}
+                ]]>
+            </if>
+            <if test="maxPrice != null ">
+              <![CDATA[
+                and price <= #{maxPrice}
+                ]]>
+            </if>
+
+            <if test="bookTypeId != null and bookTypeId != -1">
+              <![CDATA[
+                and bookTypeId = #{bookTypeId}
+                ]]>
+            </if>
+
+        </where>
+    </sql>
+
+
+    <select id="queryBookList" parameterType="com.fh.model.BookQuery" resultType="com.fh.model.Book">
+        select * from t_book
+        <include refid="whereSql"></include>
+        limit #{start},#{length}
+    </select>
+
+
+    <select id="queryCountList" parameterType="com.fh.model.BookQuery" resultType="long">
+        select count(*) from t_book
+        <include refid="whereSql"></include>
+    </select>
+
+
+</mapper>
